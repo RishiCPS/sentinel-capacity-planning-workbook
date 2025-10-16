@@ -1,0 +1,2604 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "<img src=\"https://raw.githubusercontent.com/RishiCPS/SentinelImages/main/28.png\" alt=\"Trustwave Logo\" width=\"180\"/> \r\n## ISA Sentinel Capacity Planning Dashboard\r\n\r\nThis workbook provides a data-driven, holistic view to help optimize Microsoft Sentinel costs and log ingestion strategy.   It is designed to support informed decisions around commitment tiers, log filtering, and data retention planning."
+      },
+      "name": "text - 4"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "ccd5adcd-8d59-4cfe-99ec-98075de2e253",
+            "version": "KqlParameterItem/1.0",
+            "name": "DefaultSubscription_Internal",
+            "type": 1,
+            "isRequired": true,
+            "query": "where type =~ 'microsoft.operationalinsights/workspaces'\r\n| take 1\r\n| project subscriptionId",
+            "crossComponentResources": [
+              "value::selected"
+            ],
+            "isHiddenWhenLocked": true,
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources"
+          },
+          {
+            "id": "1ca69445-60fc-4806-b43d-ac7e6aad630a",
+            "version": "KqlParameterItem/1.0",
+            "name": "Subscription",
+            "type": 6,
+            "query": "summarize by subscriptionId\r\n| project value = strcat(\"/subscriptions/\", subscriptionId), label = subscriptionId, selected = iff(subscriptionId =~ '{DefaultSubscription_Internal}', true, false)\r\n",
+            "crossComponentResources": [
+              "value::selected"
+            ],
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources"
+          },
+          {
+            "id": "e94aafa3-c5d9-4523-89f0-4e87aa754511",
+            "version": "KqlParameterItem/1.0",
+            "name": "Workspace",
+            "type": 5,
+            "query": "where type =~ 'microsoft.operationalinsights/workspaces'\n| project id",
+            "crossComponentResources": [
+              "{Subscription}"
+            ],
+            "value": "/subscriptions/b4a10294-e9a4-47e3-8dab-94cc23dd16d7/resourceGroups/Sentinel-PROD-RG/providers/Microsoft.OperationalInsights/workspaces/BDOSecure-LAW",
+            "typeSettings": {
+              "resourceTypeFilter": {
+                "microsoft.operationalinsights/workspaces": true
+              },
+              "additionalResourceOptions": []
+            },
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources"
+          },
+          {
+            "id": "eafaa0ec-7c3a-4ee5-babe-9850080c909d",
+            "version": "KqlParameterItem/1.0",
+            "name": "resourceGroup",
+            "type": 1,
+            "query": "resources\r\n| where type =~ 'microsoft.operationalinsights/workspaces'\r\n| where id == \"{Workspace}\"\r\n| project resourceGroup",
+            "crossComponentResources": [
+              "value::selected"
+            ],
+            "isHiddenWhenLocked": true,
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources"
+          },
+          {
+            "id": "c4b69c01-2263-4ada-8d9c-43433b739ff3",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "type": 4,
+            "value": {
+              "durationMs": 7776000000
+            },
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 300000
+                },
+                {
+                  "durationMs": 900000
+                },
+                {
+                  "durationMs": 1800000
+                },
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 14400000
+                },
+                {
+                  "durationMs": 43200000
+                },
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 172800000
+                },
+                {
+                  "durationMs": 259200000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                },
+                {
+                  "durationMs": 2419200000
+                },
+                {
+                  "durationMs": 2592000000
+                },
+                {
+                  "durationMs": 5184000000
+                },
+                {
+                  "durationMs": 7776000000
+                }
+              ],
+              "allowCustom": true
+            }
+          },
+          {
+            "id": "27308a9d-46a2-4fca-8035-e813201fb4f8",
+            "version": "KqlParameterItem/1.0",
+            "name": "GiBperday",
+            "type": 1,
+            "description": "Shows Average per Day over selected Duration (GiB)",
+            "query": "union withsource = tt *\r\n| where TimeGenerated > startofday({TimeRange:start}) and TimeGenerated < startofday({TimeRange:end})\r\n// Only look at chargeable Tables\r\n| where _IsBillable == True\r\n| summarize\r\nTotalGBytes =round(sum(_BilledSize/(1024*1024*1024)),2)\r\nby bin(TimeGenerated, 1d)//, Solution=tt\r\n| summarize round(avg(TotalGBytes),2)\r\n",
+            "crossComponentResources": [
+              "{Workspace}"
+            ],
+            "isHiddenWhenLocked": true,
+            "queryType": 0,
+            "resourceType": "microsoft.operationalinsights/workspaces"
+          },
+          {
+            "id": "c71f3009-a3f4-4aa5-aaf0-d0f667100e56",
+            "version": "KqlParameterItem/1.0",
+            "name": "Help",
+            "label": "Show Help",
+            "type": 10,
+            "description": "This will show some help information to help you understand the page you are on",
+            "isRequired": true,
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "jsonData": "[\r\n { \"value\": \"Yes\", \"label\": \"Yes\"},\r\n { \"value\": \"No\", \"label\": \"No\", \"selected\":true }\r\n]"
+          },
+          {
+            "id": "bd9b6f2d-3e7b-4d2c-83b4-f77154f6af42",
+            "version": "KqlParameterItem/1.0",
+            "name": "GiBtotal",
+            "type": 1,
+            "query": "union withsource = tt *\r\n| where TimeGenerated {TimeRange:query}\r\n// Only look at chargeable Tables\r\n| where _IsBillable == True\r\n| summarize TotalGBytes =round(sum(_BilledSize/(1024*1024*1024)),2)",
+            "crossComponentResources": [
+              "{Workspace}"
+            ],
+            "isHiddenWhenLocked": true,
+            "queryType": 0,
+            "resourceType": "microsoft.operationalinsights/workspaces"
+          }
+        ],
+        "style": "above",
+        "queryType": 0,
+        "resourceType": "microsoft.resourcegraph/resources"
+      },
+      "name": "parameters - 1"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "title": "price setting",
+        "items": [
+          {
+            "type": 9,
+            "content": {
+              "version": "KqlParameterItem/1.0",
+              "parameters": [
+                {
+                  "id": "170a6d54-0503-41ac-b52b-b0e3db2f427d",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "Price",
+                  "label": "Price estimation",
+                  "type": 1,
+                  "description": "Enter your price (tip. Use the Azure Pricing Calculator, enter a value of 1GB and divide by 30days), or visit https://azure.microsoft.com/en-us/pricing/details/microsoft-sentinel/",
+                  "criteriaData": [
+                    {
+                      "criteriaContext": {
+                        "operator": "Default",
+                        "rightValType": "param",
+                        "resultValType": "static",
+                        "resultVal": "4.0"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "style": "above",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "name": "parameters - 1 - Copy"
+          }
+        ],
+        "exportParameters": true
+      },
+      "name": "group - Price"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "title": "Group: Cost",
+        "items": [
+          {
+            "type": 11,
+            "content": {
+              "version": "LinkItem/1.0",
+              "style": "tabs",
+              "links": [
+                {
+                  "id": "b2d72148-33fb-4afc-9860-476d2afb7b7f",
+                  "cellValue": "selectedTab1",
+                  "linkTarget": "parameter",
+                  "linkLabel": "Overview",
+                  "subTarget": "overview",
+                  "style": "link"
+                },
+                {
+                  "id": "bb092bc8-2753-40d1-9044-507915dcbbe8",
+                  "cellValue": "selectedTab1",
+                  "linkTarget": "parameter",
+                  "linkLabel": "Table Analysis ",
+                  "subTarget": "table",
+                  "style": "link"
+                },
+                {
+                  "id": "68478fa5-e791-4eb7-836f-4c7ba3002fda",
+                  "cellValue": "selectedTab1",
+                  "linkTarget": "parameter",
+                  "linkLabel": "Syslog",
+                  "subTarget": "syslog",
+                  "style": "link"
+                },
+                {
+                  "id": "7728c496-7831-4089-afc2-133fbe5fa06b",
+                  "cellValue": "selectedTab1",
+                  "linkTarget": "parameter",
+                  "linkLabel": "Common Security Format (CEF)",
+                  "subTarget": "cef",
+                  "style": "link"
+                },
+                {
+                  "id": "ed5e9da0-5b84-413d-a198-0338b248f2b7",
+                  "cellValue": "selectedTab1",
+                  "linkTarget": "parameter",
+                  "linkLabel": "Microsoft Recommendations",
+                  "subTarget": "sentinel",
+                  "style": "link"
+                },
+                {
+                  "id": "e777628f-cf91-49ee-abdd-61a1332b7142",
+                  "cellValue": "selectedTab1",
+                  "linkTarget": "parameter",
+                  "linkLabel": "How to do Capacity Planning?",
+                  "subTarget": "howto",
+                  "style": "link"
+                },
+                {
+                  "id": "6076ee1f-3918-4c90-8b04-d0c6437dbf87",
+                  "cellValue": "selectedTab1",
+                  "linkTarget": "parameter",
+                  "linkLabel": "Email Template",
+                  "subTarget": "email",
+                  "style": "link"
+                },
+                {
+                  "id": "17d9137b-2736-447e-87a7-cb21954d7d15",
+                  "cellValue": "selectedTab1",
+                  "linkTarget": "parameter",
+                  "linkLabel": "Scenarios & Examples",
+                  "subTarget": "ScenariosExamples",
+                  "style": "link"
+                }
+              ]
+            },
+            "name": "links - 20"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "### Workspace Pricing Configuration\r\n\r\n**Price Parameter:**\r\n\r\nPlease provide the estimated cost per GB in the `[Workspace Info]` tab to populate the \"Estimated Table Price\" column.\r\n\r\n- If you are using **<span style=\"color:blue; font-weight:bold;\">New Simplified Pricing</span>**, and your Microsoft Sentinel Pay-As-You-Go (PAYG) price is **$2.00 per GB**, enter `2.00`.\r\n  \r\n- If you are **not using the New Simplified Pricing**, and wish to see the combined **Log Analytics + Sentinel** cost, sum both PAYG prices.  \r\n  *(For example: Sentinel = $2.00 + Log Analytics = $2.00 → enter `4.00`.)*\r\n\r\n👉 **Important:**  \r\nThis calculation **does not** take any capacity reservations into account. It is meant to provide an estimated view.\r\n\r\n---\r\n\r\n### Anomaly Detection Logic\r\n\r\nSeveral reports in this workbook display anomaly scores.  \r\nHere’s how the scores are interpreted based on Microsoft's guidelines:\r\n\r\n- **Score > +1.5 or < -1.5** → **Mild anomaly rise/decline**  \r\n- **Score > +3.0 or < -3.0** → **Strong anomaly rise/decline**\r\n\r\nFor more details:  \r\n[Microsoft Time Series Anomaly Detection](https://docs.microsoft.com/en-us/azure/data-explorer/anomaly-detection#time-series-anomaly-detection)",
+              "style": "info"
+            },
+            "customWidth": "50",
+            "conditionalVisibility": {
+              "parameterName": "Help",
+              "comparison": "isEqualTo",
+              "value": "Yes"
+            },
+            "name": "text - 15"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "# ⚠️ Why You Shouldn’t Follow Microsoft Recommendations “As-Is”\r\n\r\nMicrosoft offers default suggestions like switching to a higher Commitment Tier or applying log-tiering—but these are often **generic** and **don’t consider deeper, customer-specific factors**.\r\n\r\nThe built-in **Cost Estimation tools** focus primarily on recent ingestion metrics and do not factor in:\r\n\r\n- Long-term growth projections  \r\n- Log source utility in detection workflows  \r\n- Tiering suitability based on log value  \r\n- Availability of new options like **Sentinel Data Lake**\r\n\r\n> **Bottom line:** Relying solely on Microsoft defaults can lead to over-commitment, underutilization, or missed savings opportunities.\r\n\r\n---\r\n\r\n# 📊 What This Workbook Offers (Beyond Microsoft Tools)\r\n\r\nThis Sentinel Capacity Planning Workbook does more than suggest a Commitment Tier.\r\n\r\nIt enables **informed decision-making** by combining ingestion trends, connector behaviors, and real-time log utilization to uncover **actionable cost-saving strategies**.\r\n\r\n## 🧩 Key Decision Areas Enabled by the Workbook\r\n\r\n### 1. **Commitment Tier Strategy**\r\n- Analyze actual usage over 30/60/90 days.\r\n- Avoid committing during **temporary ingestion spikes** (e.g., audits, outages).\r\n- Identify when it’s appropriate to switch to PAYG or 50/100/200/500 GB tiers.\r\n\r\n### 2. **Retention & Tiering Optimization**\r\n- Evaluate retention policies per log category.\r\n- Apply smart tiering across available storage layers:\r\n\r\n| Tier                  | When to Use                              | Notes                                              |\r\n|-----------------------|------------------------------------------|----------------------------------------------------|\r\n| **Analytics Tier**     | Real-time detection, active alerting     | High cost, full feature                            |\r\n| **Sentinel Data Lake** | Cold storage, audit logs, historical investigations | Up to 12-year retention, UnifiedSecOps Platform (Defender + Sentinel) only   |\r\n\r\n> **Note:** The **Basic tier** & **Auxiliary tier**is being deprecated and should no longer be considered in planning.\r\n\r\n### 3. **Unused or Noisy Tables**\r\n- Automatically detects tables with:\r\n  - No query references\r\n  - No detection rules\r\n  - Low alert/incident generation\r\n- Recommends:\r\n  - Reducing or filtering ingestion\r\n  - Tiering non-analytic logs to **Data Lake**\r\n\r\n### 4. **Pre-Purchase Plans**\r\n- Explore **Commitment Unit (CU)** models with region-based pricing.\r\n- Estimate maximum savings via **Annual Pre-purchase Plans**.\r\n- Validate with Microsoft licensing/account team before switching.\r\n\r\n[Learn more about Pre-Purchase Plans →](https://learn.microsoft.com/en-us/azure/sentinel/billing-pre-purchase-plan)\r\n\r\n---\r\n\r\n# ✅ Summary\r\n\r\nThis workbook is not just a cost calculator—it’s a **Sentinel governance tool**.\r\n\r\nIt helps guide discussions with customers by factoring in:\r\n\r\n- Strategic tiering (Analytics vs Data Lake)\r\n- Log source behavior\r\n- Retention requirements\r\n- Business seasonality\r\n- Transition readiness to **Unified SecOps Platform**\r\n\r\n> **Use this workbook as a foundation—but always pair it with contextual judgment, platform updates, and customer-specific insights to drive sustainable cost efficiency.**\r\n"
+            },
+            "customWidth": "50",
+            "conditionalVisibility": {
+              "parameterName": "Help",
+              "comparison": "isEqualTo",
+              "value": "Yes"
+            },
+            "name": "text - 8",
+            "styleSettings": {
+              "margin": "48"
+            }
+          },
+          {
+            "type": 12,
+            "content": {
+              "version": "NotebookGroup/1.0",
+              "groupType": "editable",
+              "title": "Sentinel Usage",
+              "items": [
+                {
+                  "type": 9,
+                  "content": {
+                    "version": "KqlParameterItem/1.0",
+                    "crossComponentResources": [
+                      "{Subscription}"
+                    ],
+                    "parameters": [
+                      {
+                        "id": "923d55a3-75ac-4ce2-8820-50b4a530a553",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "SentinelPrice",
+                        "type": 1,
+                        "description": "Enter a value for Azure Sentinel Data cost, default: 2.0",
+                        "value": "2.0",
+                        "timeContext": {
+                          "durationMs": 86400000
+                        }
+                      },
+                      {
+                        "id": "f87b71cc-4738-41b7-8625-63656640e6ad",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "SentinelCap",
+                        "type": 1,
+                        "query": "resources\r\n// Just show Workspaces that have Azure Sentinel enabled\r\n| where type == \"microsoft.operationsmanagement/solutions\"\r\n| where name has \"SecurityInsights\"\r\n| parse name with * '(' s_workspace ')'*\r\n| extend sku = tolower(properties.sku.name)\r\n| extend capacityReservationLevel = properties.sku.capacityReservationLevel\r\n// add fake level for testing\r\n//| extend capacityReservationLevel = 200 , sku = \"capacityreservation\"\r\n//\r\n| project capacityReservationLevel\r\n\r\n\r\n",
+                        "crossComponentResources": [
+                          "{Subscription}"
+                        ],
+                        "isHiddenWhenLocked": true,
+                        "timeContext": {
+                          "durationMs": 86400000
+                        },
+                        "queryType": 1,
+                        "resourceType": "microsoft.resourcegraph/resources"
+                      },
+                      {
+                        "id": "72f36500-a03a-42ed-bac1-db83d92ca534",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "discountRate",
+                        "type": 1,
+                        "query": "resources\r\n// Just show Workspaces that have Azure Sentinel enabled\r\n| where type == \"microsoft.operationsmanagement/solutions\"\r\n| where name has \"SecurityInsights\"\r\n| parse name with * '(' s_workspace ')'*\r\n| extend sku = tolower(properties.sku.name)\r\n| extend capacityReservationLevel = properties.sku.capacityReservationLevel\r\n// add fake level for testing\r\n//| extend capacityReservationLevel = 200 , sku = \"capacityreservation\"\r\n| extend discountRate = case(\r\ncapacityReservationLevel == 100,50,\r\ncapacityReservationLevel == 200,55,\r\ncapacityReservationLevel == 300,57,\r\ncapacityReservationLevel == 400,58,\r\ncapacityReservationLevel == 500,60,\r\ncapacityReservationLevel >= 500,60,\r\n// else\r\n0\r\n)\r\n| project discountRate\r\n\r\n",
+                        "crossComponentResources": [
+                          "{Subscription}"
+                        ],
+                        "isHiddenWhenLocked": true,
+                        "timeContext": {
+                          "durationMs": 86400000
+                        },
+                        "queryType": 1,
+                        "resourceType": "microsoft.resourcegraph/resources"
+                      },
+                      {
+                        "version": "KqlParameterItem/1.0",
+                        "name": "lawCap",
+                        "type": 1,
+                        "query": "resources\r\n| where type =~ 'microsoft.operationalinsights/workspaces' \r\n| where id has \"{Workspace}\"\r\n| project capacityReservationLevel = properties.sku.capacityReservationLevel\r\n",
+                        "crossComponentResources": [
+                          "{Subscription}"
+                        ],
+                        "isHiddenWhenLocked": true,
+                        "timeContext": {
+                          "durationMs": 86400000
+                        },
+                        "queryType": 1,
+                        "resourceType": "microsoft.resourcegraph/resources",
+                        "id": "2665b7ce-d7df-4130-a67f-1486b598edb7"
+                      },
+                      {
+                        "id": "2b57d534-a06f-43c3-a6da-b01158540eab",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "SentinelSku",
+                        "type": 1,
+                        "query": "resources\r\n// Just show Workspaces that have Azure Sentinel enabled\r\n| where type == \"microsoft.operationsmanagement/solutions\"\r\n| where name has \"SecurityInsights\"\r\n| parse name with * '(' s_workspace ')'*\r\n| project sku = tolower(properties.sku.name)",
+                        "crossComponentResources": [
+                          "{Subscription}"
+                        ],
+                        "isHiddenWhenLocked": true,
+                        "queryType": 1,
+                        "resourceType": "microsoft.resourcegraph/resources"
+                      }
+                    ],
+                    "style": "pills",
+                    "queryType": 1,
+                    "resourceType": "microsoft.resourcegraph/resources"
+                  },
+                  "conditionalVisibility": {
+                    "parameterName": "1",
+                    "comparison": "isEqualTo",
+                    "value": "2"
+                  },
+                  "name": "parameters - 3"
+                },
+                {
+                  "type": 1,
+                  "content": {
+                    "json": "### Capacity Reservation Recommendation Based on Average GB/day\r\n\r\nThis report is designed to help you evaluate whether your current **Azure Sentinel / Log Analytics Capacity Reservation setting** aligns with your actual data ingestion.\r\n\r\nHere’s how to interpret it:\r\n\r\n- A **Green Circle (🟢)** in the **Status** column means your current setting is **optimal** based on your average daily ingestion and current Pay-As-You-Go or Capacity Reservation model.\r\n- A **Recommended Value of \"0\"** indicates you are currently on a **non-Capacity Reservation SKU**, such as **Free Tier, PerGB Pay-As-You-Go, or similar**.\r\n- A **Blue Circle (🔵)** in the **Status** column highlights a **mismatch**—meaning the workbook recommends a different tier or reservation level based on your average ingestion.\r\n\r\n### Important:\r\n\r\nWhile this report gives you a data-driven suggestion, it’s crucial to **not rely solely on automated recommendations**.  \r\nFactors like expected growth, seasonal spikes, business priorities, and ingestion optimization strategies should all be considered before deciding on reservation plans.\r\n\r\nFor detailed pricing information, please review:\r\n\r\n- [Azure Sentinel Pricing](https://azure.microsoft.com/en-us/pricing/details/azure-sentinel/)\r\n- [Log Analytics Pricing](https://azure.microsoft.com/en-us/pricing/details/monitor/)",
+                    "style": "info"
+                  },
+                  "name": "text - 5"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": " project actual_ = '{GiBperday}' , roundUp_ = round(toreal('{GiBperday}'),0)\r\n| extend lookBack = 31\r\n| extend i = roundUp_ //* 100\r\n| extend i = iif(isnan(i),toreal(0),toreal(i))\r\n// Azure Sentinel Capacity Reservation logic\r\n| extend recommendedSentinelCR = case(\r\n i <= 50,\"0\",\r\n i between (51 .. 140),\"100\",\r\n i between (141 .. 240),\"200\",\r\n i between (241 .. 335),\"300\",\r\n i between (336 .. 434),\"400\",\r\n i >= 435 ,\"500\",\r\n //else\r\n strcat(\"unknown Sentinel CR: \", i)\r\n)\r\n// Azure Log Analytics (LAW) Capacity Reservation logic\r\n| extend recommendedWorkspaceCR = case(\r\n i <= 85,\"0\",\r\n i between (86 .. 174),\"100\",\r\n i between (175 .. 274),\"200\",\r\n i between (275 .. 372),\"300\",\r\n i between (373 .. 470),\"400\",\r\n i >= 471 ,\"500\",\r\n //else\r\n strcat(\"unknown LAW CR: \", i)\r\n)\r\n| extend avgDataPerDay = i\r\n| extend currentSentinelCR = iif(isempty('{SentinelCap}'),\"0\",'{SentinelCap}')\r\n| extend currentWorkspaceCR = iif(isempty('{lawCap}'),\"0\",'{lawCap}')\r\n| extend sentinelOptimal = iif(recommendedSentinelCR == currentSentinelCR,1,0)\r\n| extend lawOptimal = iif(recommendedWorkspaceCR == currentWorkspaceCR,1,0)\r\n//| project avgDataPerDay,sentinelOptimal, lawOptimal, recommendedSentinelCR, recommendedWorkspaceCR,actualSentinelCR, actualWorkspaceCR\r\n| summarize by ['avg GB/day']=avgDataPerDay,['Azure Sentinel Status']=sentinelOptimal, ['Log Analytics Status']=lawOptimal, recommendedSentinelCR, recommendedWorkspaceCR,currentSentinelCR, currentWorkspaceCR",
+                    "size": 4,
+                    "title": "Capacity Reservation Recommendations",
+                    "queryType": 1,
+                    "resourceType": "microsoft.resourcegraph/resources",
+                    "crossComponentResources": [
+                      "{Workspace}"
+                    ],
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "Azure Sentinel Status",
+                          "formatter": 18,
+                          "formatOptions": {
+                            "thresholdsOptions": "icons",
+                            "thresholdsGrid": [
+                              {
+                                "operator": "==",
+                                "thresholdValue": "1",
+                                "representation": "success",
+                                "text": ""
+                              },
+                              {
+                                "operator": "Default",
+                                "thresholdValue": null,
+                                "representation": "pending",
+                                "text": ""
+                              }
+                            ]
+                          },
+                          "tooltipFormat": {
+                            "tooltip": "If Current and Recommended settings dont match the avg. GB/day - look to adjust? "
+                          }
+                        },
+                        {
+                          "columnMatch": "Log Analytics Status",
+                          "formatter": 18,
+                          "formatOptions": {
+                            "thresholdsOptions": "icons",
+                            "thresholdsGrid": [
+                              {
+                                "operator": "==",
+                                "thresholdValue": "1",
+                                "representation": "success",
+                                "text": ""
+                              },
+                              {
+                                "operator": "Default",
+                                "thresholdValue": null,
+                                "representation": "pending",
+                                "text": ""
+                              }
+                            ]
+                          },
+                          "tooltipFormat": {
+                            "tooltip": "If Current and Recommended settings dont match the avg. GB/day - look to adjust? "
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "name": "query - CR optimal"
+                },
+                {
+                  "type": 1,
+                  "content": {
+                    "json": "### Why This Graph is Important\r\n\r\nThis graph gives a clear, real-time view of your **actual data ingestion vs available Capacity Reservation tiers** over the past selected days.\r\n\r\n### Why it matters:\r\n\r\n1. **Avoid Overcommitting or Undercommitting:**  \r\n   You can visually check if moving up or down a tier makes sense based on real patterns—not guesses.\r\n\r\n2. **Catch Spikes & Trends Early:**  \r\n   It highlights any sudden increases or consistent overages that might need action (filtering logs, adjusting tiers, etc.).\r\n\r\n3. **Supports Smarter Conversations:**  \r\n   Helps you discuss commitment tiers with the customer confidently, backed by actual data, not assumptions.\r\n\r\n\r\n**Summary:**  \r\nThis graph simplifies decision-making by comparing your real usage to the tier options, making sure you’re not overpaying or under-planning.",
+                    "style": "info"
+                  },
+                  "name": "text - 4"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "//let lookBack = 31;\r\nunion *\r\n| where _IsBillable == true\r\n| summarize dataPerDay = round(sum(_BilledSize)/(1024*1024*1024),0) by bin(TimeGenerated,1d), SentinelCR='{SentinelCap}'\r\n| extend higherCR = case(\r\n dataPerDay < 100, 100,\r\n dataPerDay > 100 and dataPerDay < 200, 200,\r\n dataPerDay > 200 and dataPerDay < 300, 300,\r\n dataPerDay > 300 and dataPerDay < 400, 400,\r\n dataPerDay > 400 and dataPerDay < 500, 500,\r\n dataPerDay > 500 and dataPerDay < 1000, 1000,\r\n dataPerDay > 1000 and dataPerDay < 10000, 10000,\r\n // else\r\n 0\r\n )\r\n| extend lowerCR= (higherCR - 100)\r\n//| project TimeGenerated, dataPerDay, lowerCR, higherCR, SentinelCR\r\n\r\n\r\n",
+                    "size": 1,
+                    "aggregation": 3,
+                    "showAnnotations": true,
+                    "title": "Actual Data Volume and Capacity Reservation. Data from: {TimeRange:label}. ",
+                    "timeContextFromParameter": "TimeRange",
+                    "exportFieldName": "y",
+                    "exportParameterName": "yAxis",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{Workspace}"
+                    ],
+                    "visualization": "timechart",
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "Column1",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "dataPerDay",
+                          "formatter": 0,
+                          "numberFormat": {
+                            "unit": 0,
+                            "options": {
+                              "style": "decimal",
+                              "maximumSignificantDigits": 2
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "sortBy": [],
+                    "chartSettings": {
+                      "yAxis": [
+                        "dataPerDay",
+                        "higherCR",
+                        "lowerCR",
+                        "SentinelCR"
+                      ]
+                    }
+                  },
+                  "name": "query - chart of CR"
+                }
+              ]
+            },
+            "conditionalVisibility": {
+              "parameterName": "selectedTab1",
+              "comparison": "isEqualTo",
+              "value": "sentinel"
+            },
+            "name": "group - capReservation"
+          },
+          {
+            "type": 12,
+            "content": {
+              "version": "NotebookGroup/1.0",
+              "groupType": "editable",
+              "title": "CEF Usage",
+              "items": [
+                {
+                  "type": 1,
+                  "content": {
+                    "json": "## CommonSecurityLog (CEF) Insights\r\n- - - "
+                  },
+                  "name": "text - 15"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "CommonSecurityLog\r\n| where _IsBillable == true\r\n| summarize count(), sum(_BilledSize), estimatedPrice = sum(_BilledSize)/(1024*1024*1024) * {Price} by DeviceVendor\r\n| order by sum__BilledSize desc\r\n",
+                    "size": 0,
+                    "aggregation": 3,
+                    "title": "CEF DeviceVendor, count of activity and BilledSize",
+                    "timeContextFromParameter": "TimeRange",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{Workspace}"
+                    ],
+                    "visualization": "table",
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "count_",
+                          "formatter": 8,
+                          "formatOptions": {
+                            "palette": "greenRed"
+                          }
+                        },
+                        {
+                          "columnMatch": "sum__BilledSize",
+                          "formatter": 3,
+                          "formatOptions": {
+                            "palette": "greenRed"
+                          },
+                          "numberFormat": {
+                            "unit": 2,
+                            "options": {
+                              "style": "decimal"
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "estimatedPrice",
+                          "formatter": 0,
+                          "numberFormat": {
+                            "unit": 0,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "gb",
+                          "formatter": 8,
+                          "formatOptions": {
+                            "palette": "greenRed"
+                          }
+                        },
+                        {
+                          "columnMatch": "MBytes",
+                          "formatter": 0,
+                          "numberFormat": {
+                            "unit": 2,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "Table Size",
+                          "formatter": 8,
+                          "formatOptions": {
+                            "palette": "greenRed"
+                          },
+                          "numberFormat": {
+                            "unit": 2,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false,
+                              "maximumSignificantDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "bill",
+                          "formatter": 0,
+                          "numberFormat": {
+                            "unit": 2,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false,
+                              "maximumSignificantDigits": 2
+                            }
+                          }
+                        }
+                      ],
+                      "labelSettings": [
+                        {
+                          "columnId": "count_",
+                          "label": "Count"
+                        },
+                        {
+                          "columnId": "sum__BilledSize",
+                          "label": "BilledSize"
+                        }
+                      ]
+                    },
+                    "sortBy": [],
+                    "tileSettings": {
+                      "titleContent": {
+                        "columnMatch": "DeviceVendor",
+                        "formatter": 1
+                      },
+                      "leftContent": {
+                        "columnMatch": "gb",
+                        "formatter": 1,
+                        "numberFormat": {
+                          "unit": 2,
+                          "options": {
+                            "style": "decimal",
+                            "useGrouping": false,
+                            "maximumFractionDigits": 2,
+                            "maximumSignificantDigits": 3
+                          }
+                        },
+                        "tooltipFormat": {
+                          "tooltip": "BilledSize"
+                        }
+                      },
+                      "secondaryContent": {
+                        "columnMatch": "estimatedPrice",
+                        "formatter": 12,
+                        "formatOptions": {
+                          "palette": "greenRed"
+                        },
+                        "numberFormat": {
+                          "unit": 18,
+                          "options": {
+                            "style": "decimal",
+                            "useGrouping": false
+                          }
+                        },
+                        "tooltipFormat": {
+                          "tooltip": "Estimated Cost"
+                        }
+                      },
+                      "showBorder": false
+                    },
+                    "chartSettings": {
+                      "seriesLabelSettings": [
+                        {
+                          "seriesName": "BillingVolumeNow",
+                          "color": "green"
+                        },
+                        {
+                          "seriesName": "BillingForecast",
+                          "color": "redBright"
+                        }
+                      ],
+                      "ySettings": {
+                        "numberFormatSettings": {
+                          "unit": 2,
+                          "options": {
+                            "style": "decimal",
+                            "useGrouping": true
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "customWidth": "50",
+                  "name": "query - CEF chart"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "CommonSecurityLog\r\n| where _IsBillable == true\r\n| summarize count(LogSeverity),sum(_BilledSize) by LogSeverity \r\n| join (CommonSecurityLog\r\n | make-series Trend = count(LogSeverity) default = 0 on TimeGenerated from {TimeRange:start} to {TimeRange:end} step {TimeRange:grain} by LogSeverity\r\n) on LogSeverity\r\n//| extend LogSeverity = round(tolong(LogSeverity),2)\r\n| order by LogSeverity asc\r\n",
+                    "size": 0,
+                    "title": "CEF count by Severity, BilledSize and Trend",
+                    "timeContextFromParameter": "TimeRange",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{Workspace}"
+                    ],
+                    "visualization": "tiles",
+                    "tileSettings": {
+                      "titleContent": {
+                        "columnMatch": "LogSeverity",
+                        "formatter": 18,
+                        "formatOptions": {
+                          "thresholdsOptions": "icons",
+                          "thresholdsGrid": [
+                            {
+                              "operator": "is Empty",
+                              "text": "{0}{1}"
+                            },
+                            {
+                              "operator": "Default",
+                              "thresholdValue": null,
+                              "representation": "success",
+                              "text": "{0}{1}"
+                            }
+                          ]
+                        },
+                        "tooltipFormat": {
+                          "tooltip": "Log Severity Value"
+                        }
+                      },
+                      "subtitleContent": {
+                        "columnMatch": "sum__BilledSize",
+                        "formatter": 8,
+                        "formatOptions": {
+                          "palette": "greenRed"
+                        },
+                        "numberFormat": {
+                          "unit": 2,
+                          "options": {
+                            "style": "decimal",
+                            "useGrouping": false
+                          }
+                        },
+                        "tooltipFormat": {
+                          "tooltip": "BilledSize"
+                        }
+                      },
+                      "leftContent": {
+                        "columnMatch": "count_LogSeverity",
+                        "formatter": 12,
+                        "formatOptions": {
+                          "palette": "auto"
+                        },
+                        "numberFormat": {
+                          "unit": 17,
+                          "options": {
+                            "style": "decimal",
+                            "useGrouping": false,
+                            "maximumFractionDigits": 2,
+                            "maximumSignificantDigits": 3
+                          }
+                        },
+                        "tooltipFormat": {
+                          "tooltip": ""
+                        }
+                      },
+                      "secondaryContent": {
+                        "columnMatch": "Trend",
+                        "formatter": 21,
+                        "formatOptions": {
+                          "palette": "green"
+                        }
+                      },
+                      "showBorder": false
+                    }
+                  },
+                  "customWidth": "50",
+                  "name": "query - 5"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "CommonSecurityLog\r\n| where _IsBillable == true\r\n// add price column \r\n| summarize sum(_BilledSize), estimatedPrice = sum(_BilledSize)/(1024*1024*1024) * {Price} by DeviceVendor, DeviceName, DeviceProduct\r\n| order by DeviceVendor asc\r\n// add cost by facility \r\n",
+                    "size": 1,
+                    "aggregation": 3,
+                    "title": "Data by CEF Vendors, from: {TimeRange:label} ",
+                    "timeContextFromParameter": "TimeRange",
+                    "showExportToExcel": true,
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{Workspace}"
+                    ],
+                    "visualization": "table",
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "sum__BilledSize",
+                          "formatter": 8,
+                          "formatOptions": {
+                            "palette": "greenRed"
+                          },
+                          "numberFormat": {
+                            "unit": 2,
+                            "options": {
+                              "style": "decimal"
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "estimatedPrice",
+                          "formatter": 0,
+                          "numberFormat": {
+                            "unit": 0,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false,
+                              "maximumSignificantDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "Table Size",
+                          "formatter": 8,
+                          "formatOptions": {
+                            "palette": "greenRed"
+                          },
+                          "numberFormat": {
+                            "unit": 2,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false,
+                              "maximumSignificantDigits": 2
+                            }
+                          }
+                        }
+                      ],
+                      "filter": true,
+                      "hierarchySettings": {
+                        "treeType": 1,
+                        "groupBy": [
+                          "DeviceVendor",
+                          "DeviceName"
+                        ]
+                      },
+                      "sortBy": [
+                        {
+                          "itemKey": "$gen_count_$gen_group_0",
+                          "sortOrder": 2
+                        }
+                      ]
+                    },
+                    "sortBy": [
+                      {
+                        "itemKey": "$gen_count_$gen_group_0",
+                        "sortOrder": 2
+                      }
+                    ],
+                    "chartSettings": {
+                      "seriesLabelSettings": [
+                        {
+                          "seriesName": "BillingVolumeNow",
+                          "color": "green"
+                        },
+                        {
+                          "seriesName": "BillingForecast",
+                          "color": "redBright"
+                        }
+                      ],
+                      "xSettings": {},
+                      "ySettings": {
+                        "numberFormatSettings": {
+                          "unit": 2,
+                          "options": {
+                            "style": "decimal",
+                            "useGrouping": true
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "name": "query - CEF chart - Copy"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "CommonSecurityLog\r\n| where _IsBillable == true\r\n| summarize count(), sum(_BilledSize), estimatedPrice = sum(_BilledSize)/(1024*1024*1024) * {Price} by DeviceEventClassID, DeviceVendor, DeviceName, DeviceProduct, LogSeverity\r\n| order by sum__BilledSize, estimatedPrice desc\r\n",
+                    "size": 1,
+                    "aggregation": 3,
+                    "title": "Data by CEF Vendors, from: {TimeRange:label} , filter by DeviceEventClassID",
+                    "timeContextFromParameter": "TimeRange",
+                    "showExportToExcel": true,
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{Workspace}"
+                    ],
+                    "visualization": "table",
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "LogSeverity",
+                          "formatter": 8,
+                          "formatOptions": {
+                            "palette": "greenRed"
+                          }
+                        },
+                        {
+                          "columnMatch": "sum__BilledSize",
+                          "formatter": 8,
+                          "formatOptions": {
+                            "palette": "greenRed"
+                          },
+                          "numberFormat": {
+                            "unit": 2,
+                            "options": {
+                              "style": "decimal"
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "estimatedPrice",
+                          "formatter": 0,
+                          "numberFormat": {
+                            "unit": 0,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false,
+                              "maximumSignificantDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "Table Size",
+                          "formatter": 8,
+                          "formatOptions": {
+                            "palette": "greenRed"
+                          },
+                          "numberFormat": {
+                            "unit": 2,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false,
+                              "maximumSignificantDigits": 2
+                            }
+                          }
+                        }
+                      ],
+                      "filter": true,
+                      "hierarchySettings": {
+                        "treeType": 1,
+                        "groupBy": [
+                          "DeviceVendor",
+                          "DeviceName"
+                        ]
+                      }
+                    },
+                    "chartSettings": {
+                      "seriesLabelSettings": [
+                        {
+                          "seriesName": "BillingVolumeNow",
+                          "color": "green"
+                        },
+                        {
+                          "seriesName": "BillingForecast",
+                          "color": "redBright"
+                        }
+                      ],
+                      "xSettings": {},
+                      "ySettings": {
+                        "numberFormatSettings": {
+                          "unit": 2,
+                          "options": {
+                            "style": "decimal",
+                            "useGrouping": true
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "name": "query - CEF DeviceEventClassID"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "CommonSecurityLog\r\n| summarize dcount(DeviceEventClassID), sum(_BilledSize), estimatedPrice = sum(_BilledSize)/(1024*1024*1024) * {Price} by DeviceVendor, SourceIP, DestinationIP, _ResourceId\r\n",
+                    "size": 1,
+                    "title": "CEF: data set - {TimeRange:label}",
+                    "timeContextFromParameter": "TimeRange",
+                    "showExportToExcel": true,
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{Workspace}"
+                    ],
+                    "visualization": "table",
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "_ResourceId",
+                          "formatter": 0,
+                          "formatOptions": {
+                            "customColumnWidthSetting": "25ch"
+                          }
+                        },
+                        {
+                          "columnMatch": "count_",
+                          "formatter": 4,
+                          "formatOptions": {
+                            "palette": "greenRed"
+                          }
+                        },
+                        {
+                          "columnMatch": "BilledSize",
+                          "formatter": 4,
+                          "formatOptions": {
+                            "palette": "greenRed"
+                          },
+                          "numberFormat": {
+                            "unit": 36,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false,
+                              "maximumSignificantDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "estimatedPrice",
+                          "formatter": 0,
+                          "numberFormat": {
+                            "unit": 0,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false,
+                              "maximumSignificantDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "expectedEventCounts",
+                          "formatter": 0,
+                          "numberFormat": {
+                            "unit": 0,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false,
+                              "maximumFractionDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "Score",
+                          "formatter": 8,
+                          "formatOptions": {
+                            "palette": "greenRed",
+                            "customColumnWidthSetting": "10ch"
+                          }
+                        },
+                        {
+                          "columnMatch": "Trend",
+                          "formatter": 10,
+                          "formatOptions": {
+                            "palette": "pink"
+                          }
+                        },
+                        {
+                          "columnMatch": "baseline",
+                          "formatter": 21,
+                          "formatOptions": {
+                            "palette": "purple"
+                          }
+                        },
+                        {
+                          "columnMatch": "anomalies",
+                          "formatter": 10,
+                          "formatOptions": {
+                            "palette": "redBright"
+                          }
+                        },
+                        {
+                          "columnMatch": "EventID",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "TimeGenerated",
+                          "formatter": 5
+                        }
+                      ],
+                      "filter": true,
+                      "labelSettings": [
+                        {
+                          "columnId": "dcount_DeviceEventClassID",
+                          "label": "Count of unique ClassIDs",
+                          "comment": "DeviceEventClassIDs"
+                        },
+                        {
+                          "columnId": "sum__BilledSize",
+                          "label": "BilledSize"
+                        },
+                        {
+                          "columnId": "estimatedPrice",
+                          "label": "Estimated Price"
+                        }
+                      ]
+                    },
+                    "sortBy": [],
+                    "tileSettings": {
+                      "showBorder": false,
+                      "titleContent": {
+                        "columnMatch": "Activity",
+                        "formatter": 1
+                      },
+                      "leftContent": {
+                        "columnMatch": "EventID",
+                        "formatter": 12,
+                        "formatOptions": {
+                          "palette": "auto"
+                        },
+                        "numberFormat": {
+                          "unit": 17,
+                          "options": {
+                            "maximumSignificantDigits": 3,
+                            "maximumFractionDigits": 2
+                          }
+                        }
+                      }
+                    },
+                    "graphSettings": {
+                      "type": 2,
+                      "topContent": {
+                        "columnMatch": "Activity",
+                        "formatter": 1
+                      },
+                      "centerContent": {
+                        "columnMatch": "EventID",
+                        "formatter": 1,
+                        "numberFormat": {
+                          "unit": 17,
+                          "options": {
+                            "maximumSignificantDigits": 3,
+                            "maximumFractionDigits": 2
+                          }
+                        }
+                      },
+                      "nodeIdField": "Activity",
+                      "sourceIdField": "Activity",
+                      "targetIdField": "EventID",
+                      "graphOrientation": 3,
+                      "showOrientationToggles": false,
+                      "nodeSize": null,
+                      "staticNodeSize": 100,
+                      "colorSettings": {
+                        "nodeColorField": "GBytes",
+                        "type": 1,
+                        "colorPalette": "cool"
+                      },
+                      "hivesMargin": 5
+                    }
+                  },
+                  "name": "query - CEF events"
+                }
+              ]
+            },
+            "conditionalVisibility": {
+              "parameterName": "selectedTab1",
+              "comparison": "isEqualTo",
+              "value": "cef"
+            },
+            "name": "group - CEF"
+          },
+          {
+            "type": 12,
+            "content": {
+              "version": "NotebookGroup/1.0",
+              "groupType": "editable",
+              "title": "Syslog Usage",
+              "items": [
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "Syslog\r\n| where _IsBillable == true\r\n| summarize count(), sum(_BilledSize), estimatedPrice = sum(_BilledSize)/(1024*1024*1024) * {Price} by Facility\r\n| order by count_ desc\r\n",
+                    "size": 0,
+                    "title": "Syslog Facility, count of activity and BilledSize",
+                    "timeContextFromParameter": "TimeRange",
+                    "showExportToExcel": true,
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{Workspace}"
+                    ],
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "count_",
+                          "formatter": 8,
+                          "formatOptions": {
+                            "palette": "greenRed"
+                          }
+                        },
+                        {
+                          "columnMatch": "sum__BilledSize",
+                          "formatter": 3,
+                          "formatOptions": {
+                            "palette": "greenRed",
+                            "customColumnWidthSetting": "50ch"
+                          },
+                          "numberFormat": {
+                            "unit": 2,
+                            "options": {
+                              "style": "decimal"
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "estimatedPrice",
+                          "formatter": 0,
+                          "numberFormat": {
+                            "unit": 0,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false
+                            }
+                          }
+                        }
+                      ],
+                      "filter": true,
+                      "labelSettings": [
+                        {
+                          "columnId": "count_",
+                          "label": "Count"
+                        },
+                        {
+                          "columnId": "sum__BilledSize",
+                          "label": "BilledSize"
+                        }
+                      ]
+                    },
+                    "sortBy": []
+                  },
+                  "customWidth": "50",
+                  "name": "query - 0"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "Syslog\r\n| where _IsBillable == true\r\n| summarize count(SeverityLevel), sum(_BilledSize) by SeverityLevel \r\n| join (Syslog\r\n | make-series Trend = count(SeverityLevel) default = 0 on TimeGenerated from {TimeRange:start} to {TimeRange:end} step {TimeRange:grain} by SeverityLevel\r\n) on SeverityLevel\r\n",
+                    "size": 0,
+                    "title": "Syslog count by Severity, BilledSize and Trend",
+                    "timeContextFromParameter": "TimeRange",
+                    "showExportToExcel": true,
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{Workspace}"
+                    ],
+                    "visualization": "tiles",
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "count_",
+                          "formatter": 8,
+                          "formatOptions": {
+                            "palette": "greenRed"
+                          }
+                        },
+                        {
+                          "columnMatch": "sum__BilledSize",
+                          "formatter": 3,
+                          "formatOptions": {
+                            "palette": "greenRed",
+                            "customColumnWidthSetting": "50ch"
+                          },
+                          "numberFormat": {
+                            "unit": 2,
+                            "options": {
+                              "style": "decimal"
+                            }
+                          }
+                        }
+                      ],
+                      "filter": true
+                    },
+                    "sortBy": [],
+                    "tileSettings": {
+                      "titleContent": {
+                        "columnMatch": "SeverityLevel",
+                        "formatter": 18,
+                        "formatOptions": {
+                          "thresholdsOptions": "icons",
+                          "thresholdsGrid": [
+                            {
+                              "operator": "==",
+                              "thresholdValue": "info",
+                              "representation": "1",
+                              "text": "{0}{1}"
+                            },
+                            {
+                              "operator": "==",
+                              "thresholdValue": "warn",
+                              "representation": "2",
+                              "text": "{0}{1}"
+                            },
+                            {
+                              "operator": "==",
+                              "thresholdValue": "notice",
+                              "representation": "Important",
+                              "text": "{0}{1}"
+                            },
+                            {
+                              "operator": "==",
+                              "thresholdValue": "err",
+                              "representation": "error",
+                              "text": "{0}{1}"
+                            },
+                            {
+                              "operator": "==",
+                              "thresholdValue": "alert",
+                              "representation": "warning",
+                              "text": "{0}{1}"
+                            },
+                            {
+                              "operator": "Default",
+                              "thresholdValue": null,
+                              "representation": "success",
+                              "text": "{0}{1}"
+                            }
+                          ]
+                        },
+                        "tooltipFormat": {}
+                      },
+                      "subtitleContent": {
+                        "columnMatch": "sum__BilledSize",
+                        "formatter": 8,
+                        "formatOptions": {
+                          "palette": "greenRed"
+                        },
+                        "numberFormat": {
+                          "unit": 2,
+                          "options": {
+                            "style": "decimal",
+                            "maximumSignificantDigits": 3
+                          }
+                        },
+                        "tooltipFormat": {
+                          "tooltip": "BilledSize"
+                        }
+                      },
+                      "leftContent": {
+                        "columnMatch": "count_SeverityLevel",
+                        "formatter": 12,
+                        "formatOptions": {
+                          "palette": "auto"
+                        },
+                        "numberFormat": {
+                          "unit": 17,
+                          "options": {
+                            "style": "decimal",
+                            "maximumFractionDigits": 2,
+                            "maximumSignificantDigits": 3
+                          }
+                        },
+                        "tooltipFormat": {
+                          "tooltip": "Count"
+                        }
+                      },
+                      "secondaryContent": {
+                        "columnMatch": "Trend",
+                        "formatter": 21,
+                        "formatOptions": {
+                          "palette": "blue"
+                        },
+                        "tooltipFormat": {
+                          "tooltip": "Trend"
+                        }
+                      },
+                      "showBorder": false
+                    }
+                  },
+                  "customWidth": "50",
+                  "name": "query - 0 - Copy"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "Syslog\r\n| where _IsBillable == true\r\n| summarize sum(_BilledSize), estimatedPrice = sum(_BilledSize)/(1024*1024*1024) * {Price} by HostName, SeverityLevel, Facility, SyslogMessage, ProcessName\r\n| order by sum__BilledSize desc ",
+                    "size": 0,
+                    "title": "Syslog by Hostname: detailed view",
+                    "timeContextFromParameter": "TimeRange",
+                    "showExportToExcel": true,
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{Workspace}"
+                    ],
+                    "visualization": "table",
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "SeverityLevel",
+                          "formatter": 18,
+                          "formatOptions": {
+                            "thresholdsOptions": "icons",
+                            "thresholdsGrid": [
+                              {
+                                "operator": "==",
+                                "thresholdValue": "warn",
+                                "representation": "2",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "info",
+                                "representation": "info",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "err",
+                                "representation": "error",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "alert",
+                                "representation": "2",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "notice",
+                                "representation": "Normal",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "Default",
+                                "thresholdValue": null,
+                                "representation": "success",
+                                "text": "{0}{1}"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "columnMatch": "sum__BilledSize",
+                          "formatter": 3,
+                          "formatOptions": {
+                            "palette": "greenRed",
+                            "customColumnWidthSetting": "50ch"
+                          },
+                          "numberFormat": {
+                            "unit": 2,
+                            "options": {
+                              "style": "decimal"
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "estimatedPrice",
+                          "formatter": 0,
+                          "numberFormat": {
+                            "unit": 0,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "count_",
+                          "formatter": 8,
+                          "formatOptions": {
+                            "palette": "greenRed"
+                          }
+                        }
+                      ],
+                      "rowLimit": 500,
+                      "filter": true,
+                      "hierarchySettings": {
+                        "treeType": 1,
+                        "groupBy": [
+                          "HostName",
+                          "Facility"
+                        ]
+                      },
+                      "labelSettings": [
+                        {
+                          "columnId": "sum__BilledSize",
+                          "label": "BilledSize"
+                        }
+                      ]
+                    },
+                    "sortBy": [],
+                    "tileSettings": {
+                      "titleContent": {
+                        "columnMatch": "SeverityLevel",
+                        "formatter": 18,
+                        "formatOptions": {
+                          "thresholdsOptions": "icons",
+                          "thresholdsGrid": [
+                            {
+                              "operator": "==",
+                              "thresholdValue": "info",
+                              "representation": "1",
+                              "text": "{0}{1}"
+                            },
+                            {
+                              "operator": "==",
+                              "thresholdValue": "warn",
+                              "representation": "2",
+                              "text": "{0}{1}"
+                            },
+                            {
+                              "operator": "==",
+                              "thresholdValue": "notice",
+                              "representation": "Important",
+                              "text": "{0}{1}"
+                            },
+                            {
+                              "operator": "==",
+                              "thresholdValue": "err",
+                              "representation": "error",
+                              "text": "{0}{1}"
+                            },
+                            {
+                              "operator": "==",
+                              "thresholdValue": "alert",
+                              "representation": "warning",
+                              "text": "{0}{1}"
+                            },
+                            {
+                              "operator": "Default",
+                              "thresholdValue": null,
+                              "representation": "success",
+                              "text": "{0}{1}"
+                            }
+                          ]
+                        },
+                        "tooltipFormat": {}
+                      },
+                      "subtitleContent": {
+                        "columnMatch": "sum__BilledSize",
+                        "formatter": 8,
+                        "formatOptions": {
+                          "palette": "greenRed"
+                        },
+                        "numberFormat": {
+                          "unit": 2,
+                          "options": {
+                            "style": "decimal",
+                            "maximumSignificantDigits": 3
+                          }
+                        },
+                        "tooltipFormat": {
+                          "tooltip": "BilledSize"
+                        }
+                      },
+                      "leftContent": {
+                        "columnMatch": "count_SeverityLevel",
+                        "formatter": 12,
+                        "formatOptions": {
+                          "palette": "auto"
+                        },
+                        "numberFormat": {
+                          "unit": 17,
+                          "options": {
+                            "style": "decimal",
+                            "maximumFractionDigits": 2,
+                            "maximumSignificantDigits": 3
+                          }
+                        },
+                        "tooltipFormat": {
+                          "tooltip": "Count"
+                        }
+                      },
+                      "secondaryContent": {
+                        "columnMatch": "Trend",
+                        "formatter": 21,
+                        "formatOptions": {
+                          "palette": "blue"
+                        },
+                        "tooltipFormat": {
+                          "tooltip": "Trend"
+                        }
+                      },
+                      "showBorder": false
+                    }
+                  },
+                  "name": "query - 0 - Copy - Copy"
+                }
+              ]
+            },
+            "conditionalVisibility": {
+              "parameterName": "selectedTab1",
+              "comparison": "isEqualTo",
+              "value": "syslog"
+            },
+            "name": "group - syslog"
+          },
+          {
+            "type": 12,
+            "content": {
+              "version": "NotebookGroup/1.0",
+              "groupType": "editable",
+              "title": "Cost Overview",
+              "items": [
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "union withsource=TableName1 *\r\n| where TimeGenerated > ago(30d)\r\n| summarize Entries = count(), Size = sumif(_BilledSize, _IsBillable==true), last_log = datetime_diff(\"second\",now(), max(TimeGenerated)), estimate = sumif(_BilledSize, _IsBillable==true) by TableName1, _IsBillable\r\n| project ['Table Name'] = TableName1, ['Table Size'] = Size , ['% of Total GiB'] = (Size /(1024*1024*1024)) / {GiBtotal} * 100,['IsBillable'] = _IsBillable, ['Last Record Received'] = last_log , ['Estimated Table Price'] = (estimate/(1024*1024*1024)) * {Price}\r\n | order by ['Table Size'] desc\r\n\r\n ",
+                    "size": 0,
+                    "showAnalytics": true,
+                    "title": "{Workspace:name} Details for 30days, total: {GiBtotal} GiB",
+                    "timeContextFromParameter": "TimeRange",
+                    "exportFieldName": "Table Name",
+                    "exportParameterName": "Table",
+                    "exportDefaultValue": "All Tables",
+                    "showExportToExcel": true,
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{Workspace}"
+                    ],
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "Table Size",
+                          "formatter": 3,
+                          "formatOptions": {
+                            "min": 0,
+                            "palette": "coldHot"
+                          },
+                          "numberFormat": {
+                            "unit": 2,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false,
+                              "maximumSignificantDigits": 3
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "IsBillable",
+                          "formatter": 18,
+                          "formatOptions": {
+                            "thresholdsOptions": "colors",
+                            "thresholdsGrid": [
+                              {
+                                "operator": "==",
+                                "thresholdValue": "True",
+                                "representation": "green",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "False",
+                                "representation": "blueDark",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "Default",
+                                "thresholdValue": null,
+                                "representation": "blue",
+                                "text": "{0}{1}"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "columnMatch": "Last Record Received",
+                          "formatter": 8,
+                          "formatOptions": {
+                            "palette": "greenRed"
+                          },
+                          "numberFormat": {
+                            "unit": 24,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false,
+                              "maximumSignificantDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "Estimated Table Price",
+                          "formatter": 3,
+                          "formatOptions": {
+                            "palette": "greenRed"
+                          },
+                          "numberFormat": {
+                            "unit": 0,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "%",
+                          "formatter": 1,
+                          "formatOptions": {
+                            "customColumnWidthSetting": "15ch"
+                          },
+                          "numberFormat": {
+                            "unit": 1,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": true,
+                              "maximumFractionDigits": 2,
+                              "maximumSignificantDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "Table Entries",
+                          "formatter": 3,
+                          "formatOptions": {
+                            "min": 0,
+                            "palette": "green"
+                          },
+                          "numberFormat": {
+                            "unit": 17,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "Size per Entry",
+                          "formatter": 3,
+                          "formatOptions": {
+                            "min": 0,
+                            "palette": "orange"
+                          },
+                          "numberFormat": {
+                            "unit": 2,
+                            "options": {
+                              "style": "decimal",
+                              "maximumFractionDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "Table Trend",
+                          "formatter": 10,
+                          "formatOptions": {
+                            "palette": "redGreen"
+                          }
+                        }
+                      ],
+                      "filter": true,
+                      "labelSettings": [
+                        {
+                          "columnId": "Table Size",
+                          "label": "",
+                          "comment": "Capacity of the Table"
+                        },
+                        {
+                          "columnId": "IsBillable",
+                          "comment": "Is the Table Free or Billable?"
+                        },
+                        {
+                          "columnId": "Last Record Received",
+                          "comment": "When did the last record arrive?"
+                        }
+                      ]
+                    },
+                    "sortBy": []
+                  },
+                  "name": "query - 2 - Copy"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "//\r\n// Predict data volume for the next month\r\n//\r\nlet startDate = {TimeRange:start}; // go back in time nn days\r\nlet endDate = now(); // what is the date now\r\nlet projectTo = now()+90d; // project forward nn days\r\nlet projectForward = 90; // must be same as projectTo value\r\nunion withsource = TableName1 *\r\n//| where TimeGenerated between (startDate .. endDate )\r\n| where _IsBillable == True\r\n| make-series GBytesToday=sum(_BilledSize)/(1024*1024*1024) default=0 on TimeGenerated from startDate to projectTo step 1d \r\n| extend GBytesForecast = series_decompose_forecast(GBytesToday, projectForward)\r\n\r\n",
+                    "size": 0,
+                    "aggregation": 5,
+                    "showAnnotations": true,
+                    "title": "Actual Data Volume vs. 90 day Prediction. Data from: {TimeRange:label}. Minimum 30days suggested, ideally 90days ",
+                    "timeContextFromParameter": "TimeRange",
+                    "exportFieldName": "y",
+                    "exportParameterName": "yAxis",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{Workspace}"
+                    ],
+                    "visualization": "linechart",
+                    "sortBy": [],
+                    "chartSettings": {
+                      "seriesLabelSettings": [
+                        {
+                          "seriesName": "GBytesToday",
+                          "color": "blueDark"
+                        },
+                        {
+                          "seriesName": "GBytesForecast",
+                          "color": "redBright"
+                        }
+                      ],
+                      "ySettings": {
+                        "numberFormatSettings": {
+                          "unit": 5,
+                          "options": {
+                            "style": "decimal",
+                            "useGrouping": true,
+                            "maximumSignificantDigits": 3
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "name": "query - 20 - Copy"
+                },
+                {
+                  "type": 1,
+                  "content": {
+                    "json": "This Tables show the details of which Data is changing, the Top billable Tables and a breakdown by resources and Windows Events. \r\n- Use these to identify a change in data use, or the most costly data Tables or Resources.",
+                    "style": "info"
+                  },
+                  "conditionalVisibility": {
+                    "parameterName": "Help",
+                    "comparison": "isEqualTo",
+                    "value": "Yes"
+                  },
+                  "name": "text - 9 - Copy"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "union withsource = _TableName *\r\n| make-series bill_ = sum(_BilledSize) on TimeGenerated from ago(90d) to now() step 1d by _TableName\r\n| extend (anomalies, score, baseline) = series_decompose_anomalies(bill_, 1.5, 7, 'linefit', 1, 'ctukey', 0.01)\r\n| where anomalies[-1] == 1 or anomalies[-1] == -1 \r\n| extend Score = score[-1]\r\n| where Score > 3 or Score < -3\r\n| project [\"Table Name\"] = _TableName, expectedCounts=baseline[-1], actualCount=bill_[-1] , Score = score[-1], Trend = bill_, Baseline = baseline\r\n\r\n// https://docs.microsoft.com/en-us/azure/data-explorer/anomaly-detection#time-series-anomaly-detection\r\n// Anomaly scores above 1.5 or below -1.5 indicate a mild anomaly rise or decline respectively. Anomaly scores above 3.0 or below -3.0 indicate a strong anomaly.",
+                    "size": 1,
+                    "title": "BilledSize Anomalies: 90day, fixed look back period. anomaly-detection: Strong",
+                    "timeContextFromParameter": "TimeRange",
+                    "showRefreshButton": true,
+                    "showExportToExcel": true,
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{Workspace}"
+                    ],
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "expectedCounts",
+                          "formatter": 0,
+                          "numberFormat": {
+                            "unit": 2,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false,
+                              "maximumFractionDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "actualCount",
+                          "formatter": 0,
+                          "numberFormat": {
+                            "unit": 2,
+                            "options": {
+                              "style": "decimal",
+                              "maximumFractionDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "Score",
+                          "formatter": 0,
+                          "numberFormat": {
+                            "unit": 0,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false,
+                              "maximumSignificantDigits": 2
+                            }
+                          },
+                          "tooltipFormat": {
+                            "tooltip": " Anomaly scores above 3.0 or below -3.0 indicate a strong anomaly"
+                          }
+                        },
+                        {
+                          "columnMatch": "Trend",
+                          "formatter": 10,
+                          "formatOptions": {
+                            "palette": "pink"
+                          }
+                        },
+                        {
+                          "columnMatch": "Baseline",
+                          "formatter": 21,
+                          "formatOptions": {
+                            "palette": "purple"
+                          }
+                        }
+                      ],
+                      "filter": true,
+                      "sortBy": [
+                        {
+                          "itemKey": "$gen_number_Score_3",
+                          "sortOrder": 2
+                        }
+                      ]
+                    },
+                    "sortBy": [
+                      {
+                        "itemKey": "$gen_number_Score_3",
+                        "sortOrder": 2
+                      }
+                    ]
+                  },
+                  "name": "query - billedSize Anomalies"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "union withsource = TableName1 *\r\n| where _IsBillable == True\r\n| summarize totalGBytes =round(sum(_BilledSize/(1024*1024*1024)),2) by bin(TimeGenerated, 7d)\r\n| order by TimeGenerated asc\r\n| serialize \r\n| extend changeInGB = totalGBytes - prev(totalGBytes,1)\r\n| extend pctChange = (changeInGB * 100) / prev(totalGBytes,1)\r\n| extend TimeGenerated = strcat( format_datetime(TimeGenerated, 'yyyy-MM-dd'), \", Week of year: \", week_of_year(TimeGenerated) )\r\n",
+                    "size": 0,
+                    "aggregation": 3,
+                    "title": "Data change (GBytes) and % , from: {TimeRange:label} grouping: Weekly",
+                    "timeContextFromParameter": "TimeRange",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{Workspace}"
+                    ],
+                    "visualization": "table",
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "TimeGenerated",
+                          "formatter": 0,
+                          "numberFormat": {
+                            "unit": 27,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "changeInGB",
+                          "formatter": 8,
+                          "formatOptions": {
+                            "palette": "coldHot"
+                          },
+                          "numberFormat": {
+                            "unit": 0,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false,
+                              "maximumSignificantDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "pctChange",
+                          "formatter": 0,
+                          "numberFormat": {
+                            "unit": 1,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false,
+                              "maximumSignificantDigits": 2
+                            }
+                          }
+                        }
+                      ],
+                      "labelSettings": [
+                        {
+                          "columnId": "changeInGB",
+                          "label": "Change from last period (GBytes)"
+                        },
+                        {
+                          "columnId": "pctChange",
+                          "label": "% Change"
+                        }
+                      ]
+                    },
+                    "chartSettings": {
+                      "showMetrics": false,
+                      "seriesLabelSettings": [
+                        {
+                          "seriesName": "BillingVolumeNow",
+                          "color": "green"
+                        },
+                        {
+                          "seriesName": "BillingForecast",
+                          "color": "redBright"
+                        }
+                      ]
+                    }
+                  },
+                  "name": "query - 20 - Copy - Copy"
+                }
+              ]
+            },
+            "conditionalVisibility": {
+              "parameterName": "selectedTab1",
+              "comparison": "isEqualTo",
+              "value": "overview"
+            },
+            "name": "group - Cost Overview"
+          },
+          {
+            "type": 12,
+            "content": {
+              "version": "NotebookGroup/1.0",
+              "groupType": "editable",
+              "title": "Table Analysis",
+              "items": [
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "union withsource=TableName1 *\r\n| where TimeGenerated {TimeRange:query}\r\n| summarize Entries = count(), Size = sum(_BilledSize), estimate = sumif(_BilledSize, _IsBillable==true) by TableName1, _IsBillable\r\n| project ['Table Name'] = TableName1, ['Table Size'] = Size,\r\n ['IsBillable'] = _IsBillable\r\n | top 10 by ['Table Size'] desc\r\n\r\n",
+                    "size": 0,
+                    "aggregation": 3,
+                    "title": "Top 10 Costs by Table, from: {TimeRange:label} data",
+                    "timeContextFromParameter": "TimeRange",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{Workspace}"
+                    ],
+                    "visualization": "table",
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "Table Size",
+                          "formatter": 3,
+                          "formatOptions": {
+                            "palette": "greenRed"
+                          },
+                          "numberFormat": {
+                            "unit": 2,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false,
+                              "maximumSignificantDigits": 2
+                            }
+                          }
+                        }
+                      ],
+                      "filter": true
+                    },
+                    "sortBy": [],
+                    "chartSettings": {
+                      "showMetrics": false,
+                      "seriesLabelSettings": [
+                        {
+                          "seriesName": "BillingVolumeNow",
+                          "color": "green"
+                        },
+                        {
+                          "seriesName": "BillingForecast",
+                          "color": "redBright"
+                        }
+                      ]
+                    }
+                  },
+                  "customWidth": "50",
+                  "name": "query - 20 - Copy"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "//union withsource=TableName1 Event, SecurityEvent, CommonSecurityLog\r\n//| summarize ['Table Size'] = sum(_BilledSize) by TableName1, _ResourceId\r\n//| top 10 by ['Table Size'] desc\r\nunion\r\n(SecurityEvent\r\n| make-series GiBperDay=sum(_BilledSize)/(1024*1024*1024) on bin(TimeGenerated,1d) from {TimeRange:start} to {TimeRange:end} step {TimeRange:grain} by _ResourceId, Type\r\n| join (SecurityEvent | summarize ['Table Size']=sum(_BilledSize) by _ResourceId) on _ResourceId\r\n| project-away _ResourceId1, TimeGenerated\r\n),\r\n(\r\nCommonSecurityLog\r\n| make-series GiBperDay=sum(_BilledSize)/(1024*1024*1024) on bin(TimeGenerated,1d) from {TimeRange:start} to {TimeRange:end} step {TimeRange:grain} by _ResourceId, Type\r\n| join (CommonSecurityLog | summarize ['Table Size']=sum(_BilledSize) by _ResourceId) on _ResourceId\r\n| project-away _ResourceId1, TimeGenerated\r\n),\r\n(\r\nEvent\r\n| make-series GiBperDay=sum(_BilledSize)/(1024*1024*1024) on bin(TimeGenerated,1d) from {TimeRange:start} to {TimeRange:end} step {TimeRange:grain} by _ResourceId, Type\r\n| join (Event | summarize ['Table Size']=sum(_BilledSize) by _ResourceId) on _ResourceId\r\n| project-away _ResourceId1, TimeGenerated\r\n)\r\n| top 10 by ['Table Size'] desc",
+                    "size": 0,
+                    "aggregation": 3,
+                    "title": "Top 10 Costs by Resource, from: {TimeRange:label} data",
+                    "timeContextFromParameter": "TimeRange",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{Workspace}"
+                    ],
+                    "visualization": "table",
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "GiBperDay",
+                          "formatter": 10,
+                          "formatOptions": {
+                            "palette": "greenRed"
+                          },
+                          "numberFormat": {
+                            "unit": 0,
+                            "options": {
+                              "style": "decimal",
+                              "maximumSignificantDigits": 3
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "Table Size",
+                          "formatter": 4,
+                          "formatOptions": {
+                            "palette": "greenRed"
+                          },
+                          "numberFormat": {
+                            "unit": 2,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false,
+                              "maximumSignificantDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "sum__BilledSize",
+                          "formatter": 8,
+                          "formatOptions": {
+                            "palette": "greenRed"
+                          },
+                          "numberFormat": {
+                            "unit": 2,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false,
+                              "maximumSignificantDigits": 3
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "GBytesToday",
+                          "formatter": 10,
+                          "formatOptions": {
+                            "palette": "blue"
+                          }
+                        },
+                        {
+                          "columnMatch": "bill",
+                          "formatter": 0,
+                          "numberFormat": {
+                            "unit": 2,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false,
+                              "maximumSignificantDigits": 2
+                            }
+                          }
+                        }
+                      ],
+                      "filter": true
+                    },
+                    "sortBy": [],
+                    "chartSettings": {
+                      "showMetrics": false,
+                      "seriesLabelSettings": [
+                        {
+                          "seriesName": "BillingVolumeNow",
+                          "color": "green"
+                        },
+                        {
+                          "seriesName": "BillingForecast",
+                          "color": "redBright"
+                        }
+                      ]
+                    }
+                  },
+                  "customWidth": "50",
+                  "name": "query - 20 - Copy - Copy"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "union withsource=TableName1 Event, SecurityEvent, Syslog\r\n| where _IsBillable == true\r\n| summarize ['Table Size'] = sum(_BilledSize) by TableName=TableName1 , EventID, Activity, RenderedDescription, SyslogMessage\r\n| extend EventDescription = iif(isempty(Activity),RenderedDescription,Activity)\r\n| extend EventDescription = iif(isempty(EventDescription),SyslogMessage,EventDescription)\r\n| project-away RenderedDescription, SyslogMessage, Activity\r\n| top 10 by ['Table Size'] desc",
+                    "size": 0,
+                    "aggregation": 3,
+                    "title": "Top 10 Costs by EventId, from: {TimeRange:label} data",
+                    "timeContextFromParameter": "TimeRange",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{Workspace}"
+                    ],
+                    "visualization": "table",
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "Table Size",
+                          "formatter": 4,
+                          "formatOptions": {
+                            "palette": "greenRed"
+                          },
+                          "numberFormat": {
+                            "unit": 2,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false,
+                              "maximumSignificantDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "bill",
+                          "formatter": 0,
+                          "numberFormat": {
+                            "unit": 2,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false,
+                              "maximumSignificantDigits": 2
+                            }
+                          }
+                        }
+                      ],
+                      "filter": true
+                    },
+                    "sortBy": [],
+                    "chartSettings": {
+                      "showMetrics": false,
+                      "seriesLabelSettings": [
+                        {
+                          "seriesName": "BillingVolumeNow",
+                          "color": "green"
+                        },
+                        {
+                          "seriesName": "BillingForecast",
+                          "color": "redBright"
+                        }
+                      ]
+                    }
+                  },
+                  "customWidth": "50",
+                  "name": "query - 20 - Copy - Copy - Copy"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "union withsource=TableName1 Event, SecurityEvent, Syslog\r\n| where _IsBillable == true\r\n| summarize ['Table Size'] = sum(_BilledSize) by TableName = TableName1 , EventID, Computer\r\n| top 20 by ['Table Size'] desc\r\n",
+                    "size": 0,
+                    "aggregation": 3,
+                    "title": "Top 20 Costs by Event, from: {TimeRange:label} data by Computer",
+                    "timeContextFromParameter": "TimeRange",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{Workspace}"
+                    ],
+                    "visualization": "table",
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "Table Size",
+                          "formatter": 4,
+                          "formatOptions": {
+                            "palette": "greenRed"
+                          },
+                          "numberFormat": {
+                            "unit": 2,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false,
+                              "maximumSignificantDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "bill",
+                          "formatter": 0,
+                          "numberFormat": {
+                            "unit": 2,
+                            "options": {
+                              "style": "decimal",
+                              "useGrouping": false,
+                              "maximumSignificantDigits": 2
+                            }
+                          }
+                        }
+                      ],
+                      "filter": true
+                    },
+                    "sortBy": [],
+                    "chartSettings": {
+                      "showMetrics": false,
+                      "seriesLabelSettings": [
+                        {
+                          "seriesName": "BillingVolumeNow",
+                          "color": "green"
+                        },
+                        {
+                          "seriesName": "BillingForecast",
+                          "color": "redBright"
+                        }
+                      ]
+                    }
+                  },
+                  "customWidth": "50",
+                  "name": "query - 20 - Copy - Copy - Copy - Copy"
+                }
+              ]
+            },
+            "conditionalVisibility": {
+              "parameterName": "selectedTab1",
+              "comparison": "isEqualTo",
+              "value": "table"
+            },
+            "name": "group - Table"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "### 🔍 Capacity Planning: Step-by-Step Approach\r\n\r\nThis workbook helps guide **real-world Sentinel capacity planning** across multiple dimensions—far beyond a simple 31-day average.  \r\nEach tab presents a unique lens to assess ingestion, retention, and cost—empowering informed decisions around **tiering, retention strategy**, and **Microsoft licensing**.\r\n\r\n---\r\n\r\n#### **Step 1: Set Context Globally**\r\nUse the **top-level controls** to define the analysis scope:\r\n- **Subscription**, **Workspace**, and **Time Range**  \r\n  *(Longer durations stabilize forecasts and highlight seasonality)*\r\n- Input your **current price per GB/day** under *Price Estimation* to simulate accurate ingestion cost.\r\n\r\n---\r\n\r\n#### **Step 2: Use the Overview Tab for High-Level Trends**\r\n- See **table-wise ingestion cost** (ascending order for quick savings).\r\n- Identify **billable tables** and **monthly spend estimates**.\r\n- Review the **90-day forecast** for spikes, dips, or consistent growth.\r\n- Spot anomalies—tables with unexpected volume shifts.\r\n- Check **week-over-week change** to detect ingestion drift.\r\n\r\n---\r\n\r\n#### **Step 3: Drill Into Table-Level Behavior**\r\nNavigate to the **Table Analysis tab** to:\r\n- Examine **Top 10 costly tables**, **resources**, and **event IDs**.\r\n- Find the **Top 20 most expensive events** by volume.\r\n- Assess logs for:\r\n  - High noise with low security value\r\n  - Duplication across connectors\r\n  - Candidates for **tiering**, **filtering**, or **disabling**\r\n\r\n---\r\n\r\n#### **Step 4: Review Syslog-Specific Insights**\r\nIn the **Syslog tab**:\r\n- Explore breakdown by **facility** (`auth`, `cron`, etc.)\r\n- Chart ingestion by **severity level** (info, warning, error).\r\n- Find **chatty hosts** that may need suppression or log-level tuning.\r\n\r\n---\r\n\r\n#### **Step 5: Deep Dive into CEF / CommonSecurityLog**\r\nUse the **CEF tab** to:\r\n- View ingestion by **device class** and **event IDs**\r\n- Identify devices (e.g., Fortinet, Palo Alto) producing high-volume logs\r\n- Cross-check against detection rules to justify retention\r\n\r\n---\r\n\r\n#### **Step 6: Review Volume-Based Capacity Recommendations**\r\nVisit the **Capacity Recommendation tab**:\r\n- Compare **actual daily ingestion** vs Microsoft’s commitment tiers (e.g., 100/200/500 GB/day).\r\n- Flag potential overspend or underutilization.\r\n> ⚠️ **Warning:** This model is volume-driven only.  \r\nIt **does not account for log utility, redundancy, or tiering opportunities**. Use as directional input only.\r\n\r\n---\r\n\r\n#### **Step 7: Cross-Check with Native Sentinel Recommendations**\r\nIn the **Sentinel API tab**:\r\n- Highlight tables **not used by any analytics rules**\r\n- Spot **deadweight ingestion**—logs that can be:\r\n  - Disabled\r\n  - Filtered at source\r\n  - Moved to **Auxiliary** or **Sentinel Data Lake**\r\n\r\n\r\n### 🛠️ What to Do Next (Based on Findings)\r\n\r\n#### ✅ Commitment Tier Strategy\r\n- Use the Overview, Forecast, and Capacity panels to assess if you’re ready to commit.\r\n- Avoid committing during temporary spikes or during high-variance periods.\r\n\r\n#### ✅ Ingestion Tier Optimization  \r\nMove log data to the most suitable tier:\r\n\r\n| Tier | Use When… | Platform Scope | Notes |\r\n|------|-----------|----------------|-------|\r\n| **Analytics Tier** | Needed for active detection rules and alerts | Sentinel & Defender | Default, full feature |\r\n| **Auxiliary Tier** | Queried occasionally or used for enrichment | Sentinel & Defender | Lower-cost, short retention |\r\n| **Sentinel Data Lake** | Needed for long-term storage, audit, or historical forensics | **Defender-only (Unified SecOps)** | Up to 12 years, pay-per-query |\r\n\r\n> **Note:** The **Basic tier** is being deprecated and should be phased out from all recommendations.\r\n\r\n👉 [Log Table Plan Reference](https://learn.microsoft.com/en-us/azure/azure-monitor/logs/logs-table-plans)  \r\n👉 [Sentinel Data Lake Overview](https://learn.microsoft.com/en-us/azure/sentinel/datalake/sentinel-lake-overview)\r\n\r\n#### ✅ Pre-Purchase Plans  \r\nExplore Microsoft’s [Sentinel Pre-Purchase Plans](https://learn.microsoft.com/en-us/azure/sentinel/billing-pre-purchase-plan) if consistent high-volume ingestion is detected.\r\n\r\n#### ✅ Alert Fatigue & Detection Efficiency  \r\n- Identify high-ingestion tables triggering **low-value alerts**.\r\n- Triage detection rules and reduce scope if signal-to-noise is low.\r\n\r\n\r\n### ✅ Summary\r\n\r\nThis workbook delivers **context-aware, data-driven recommendations**.  \r\nHowever, no workbook or API can replace **business judgment**.\r\n\r\n> Always pair these insights with stakeholder discussions to align with:\r\n> - Business cycles  \r\n> - Compliance obligations  \r\n> - SOC detection priorities  \r\n> - Licensing models (Unified SecOps transition)\r\n\r\nUse this structure to drive **sustainable, cost-efficient decisions** in your Sentinel environments.\r\n"
+            },
+            "customWidth": "48",
+            "conditionalVisibility": {
+              "parameterName": "selectedTab1",
+              "comparison": "isEqualTo",
+              "value": "howto"
+            },
+            "name": "text - 8",
+            "styleSettings": {
+              "showBorder": true
+            }
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "### 🧠 Sentinel Capacity Planning – End-to-End Strategy\r\n\r\nThis guide supports a structured approach to optimize **Microsoft Sentinel ingestion and cost**—prioritizing real-world patterns, log utility, and Microsoft tiering options.\r\n\r\n![Sentinel Capacity Planning Steps](https://raw.githubusercontent.com/RishiCPS/SentinelImages/main/capacityPlanningSteps.png)\r\n\r\n---\r\n\r\n#### **1️⃣ Baseline the Current State**\r\n- Select a **time range of 60–90 days** to normalize fluctuations from audits or outages.\r\n- Input the **real per-GB cost** to align with the customer’s billing model (PAYG, Commitment, or Pre-Purchase).\r\n- This sets a realistic foundation for cost simulation and planning.\r\n\r\n---\r\n\r\n#### **2️⃣ Surface Noisy & Redundant Logs**\r\n- Identify:\r\n  - **High-ingestion tables** with **no detection or alert value**\r\n  - Logs unused in **analytics, incidents, or workbooks**\r\n- Take action to:\r\n  - **Filter them before ingestion**, or\r\n  - Route to **Auxiliary** or **Sentinel Data Lake** for cost-effective retention\r\n\r\n🔧 *Goal: Reduce unnecessary ingestion before making financial commitments.*\r\n\r\n---\r\n\r\n#### **3️⃣ Validate Detection & Compliance Coverage**\r\n- Reassess high-volume logs that remain:\r\n  - Are they **essential for threat detection, audits, or investigations**?\r\n  - Are they linked to **active rules or compliance workflows**?\r\n- If not, mark for decommissioning or re-tiering.\r\n\r\n---\r\n\r\n#### **4️⃣ Apply Intelligent Tiering**\r\n- Take decisive action:\r\n  - Filter or disable noisy logs\r\n  - Move low-priority logs to:\r\n    - **Auxiliary Tier** (short-term lookups, enrichment)\r\n    - **Sentinel Data Lake** (long-term, cold storage in Defender)\r\n- Preserve only **high-signal data** in the **Analytics Tier**\r\n\r\n📉 *Expect noticeable drops in daily ingestion volume post-tiering.*\r\n\r\n---\r\n\r\n#### **5️⃣ Recalculate Ingestion Baseline**\r\n- Let optimizations reflect in the workbook.\r\n- Use the **post-cleanup average GB/day** as the new benchmark.\r\n- Helps avoid overcommitting to a higher tier unnecessarily.\r\n\r\n---\r\n\r\n#### **6️⃣ Select the Optimal Pricing Model**\r\nBased on the cleaned baseline:\r\n- If usage is **stable**, commit to a suitable **Capacity Tier** (e.g., 100/200 GB/day)\r\n- If usage is **predictable and high**, explore a **Pre-Purchase Plan**\r\n- If **variability remains** or optimizations are ongoing, stick with **Pay-As-You-Go** for now\r\n\r\n---\r\n\r\n#### **7️⃣ Monitor, Learn, Iterate**\r\n- Revisit the workbook every **60–90 days** to:\r\n  - Capture ingestion creep from new connectors or sources\r\n  - Update tiering and pricing decisions accordingly\r\n- Embed this as a **quarterly check-in** for Sentinel operations\r\n\r\n---\r\n\r\n### 🔁 Strategic Flow Summary\r\n\r\n**Baseline → Identify Noise → Validate Use Cases → Optimize Tiering → Recalculate → Choose Pricing → Monitor Continuously**\r\n\r\n> This cycle drives cost-effective, operationally relevant, and scalable Microsoft Sentinel deployments.\r\n"
+            },
+            "customWidth": "50",
+            "conditionalVisibility": {
+              "parameterName": "selectedTab1",
+              "comparison": "isEqualTo",
+              "value": "howto"
+            },
+            "name": "text - 9",
+            "styleSettings": {
+              "showBorder": true
+            }
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<!-- Optional / Internal Review Only -->\r\n\r\n---\r\n\r\n**Subject:** Microsoft Sentinel Capacity Planning Review & Recommendations\r\n\r\n**Hi [Customer Name],**\r\n\r\nI've completed a review of your Microsoft Sentinel environment using our **Capacity Planning Dashboard**, which offers enhanced visibility into ingestion trends, key cost drivers, and actionable optimization paths.\r\n\r\n### 📊 Key Findings:\r\n- Your average daily ingestion is approximately **[XXX GB/day]**\r\n- Top contributors to volume include: **[Top 2–3 tables/sources]**\r\n- Some logs appear to have **limited analytic or alerting relevance** but generate significant volume\r\n- Your current billing model is: **[Pay-As-You-Go / Commitment Tier / Other]**\r\n\r\n---\r\n\r\n### 🛠️ Recommendations\r\n\r\n#### 1. **Log Source Optimization**\r\n- Review and filter **noisy or redundant sources** such as [example table or connector]\r\n- Re-tier logs based on usage and compliance value:\r\n  - Use **Auxiliary Tier** for low-frequency lookups\r\n  - Use **Sentinel Data Lake** (Unified SecOps only) for long-term, low-access retention\r\n\r\n> 🔎 *Note: The Basic tier is deprecated and should no longer be used for planning.*\r\n\r\n#### 2. **Right-Size Pricing Strategy**\r\n- After optimization, a **[100 / 200 / 500 GB/day] Commitment Tier** may provide better cost-efficiency\r\n- If ingestion is stable, consider **Sentinel Pre-Purchase Plans** for deeper discounts\r\n\r\n#### 3. **Ongoing Monitoring**\r\n- Revisit the dashboard in **60–90 days** to account for new data sources or seasonal changes\r\n- Adjust commitment or tiering decisions accordingly\r\n\r\n---\r\n\r\nIf you'd like a walkthrough of the workbook or help implementing any of these changes, I'm happy to schedule a quick session.\r\n\r\nLet me know what time works best for you.\r\n"
+            },
+            "conditionalVisibility": {
+              "parameterName": "selectedTab1",
+              "comparison": "isEqualTo",
+              "value": "email"
+            },
+            "name": "text - 10"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "datatable(recommendationTypeId:string, state:string)\r\n[\r\n    \"Precision_DataValue\", \"Active\",\r\n    \"Precision_UnusedColumns\", \"Active\",\r\n]\r\n",
+              "size": 0,
+              "timeContext": {
+                "durationMs": 86400000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "conditionalVisibility": {
+              "parameterName": "1",
+              "comparison": "isEqualTo",
+              "value": "2"
+            },
+            "name": "query - 12"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "{\"version\":\"ARMEndpoint/1.0\",\"data\":null,\"headers\":[],\"method\":\"GET\",\"path\":\"/subscriptions/{Subscription:id}/resourceGroups/{resourceGroup}/providers/Microsoft.OperationalInsights/workspaces/{Workspace:name}/providers/Microsoft.SecurityInsights/Recommendations\",\"urlParams\":[{\"key\":\"api-version\",\"value\":\"2025-01-01-preview\"}],\"batchDisabled\":false,\"transformers\":[{\"type\":\"jsonpath\",\"settings\":{\"tablePath\":\"$.value[*].properties\",\"columns\":[]}}]}",
+              "size": 0,
+              "queryType": 12,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "suggestions",
+                    "formatter": 7,
+                    "formatOptions": {
+                      "linkTarget": "CellDetails",
+                      "linkIsContextBlade": true
+                    }
+                  }
+                ]
+              }
+            },
+            "conditionalVisibility": {
+              "parameterName": "1",
+              "comparison": "isEqualTo",
+              "value": "2"
+            },
+            "name": "query - 11"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "{\"version\":\"Merge/1.0\",\"merges\":[{\"id\":\"3c97372c-6658-4cd6-a57d-f02004b430ab\",\"mergeType\":\"innerunique\",\"leftTable\":\"query - 12\",\"rightTable\":\"query - 11\",\"leftColumn\":\"recommendationTypeId\",\"rightColumn\":\"recommendationTypeId\"}],\"projectRename\":[{\"originalName\":\"[query - 11].title\",\"mergedName\":\"title\",\"fromId\":\"3c97372c-6658-4cd6-a57d-f02004b430ab\"},{\"originalName\":\"[query - 11].description\",\"mergedName\":\"description\",\"fromId\":\"3c97372c-6658-4cd6-a57d-f02004b430ab\"},{\"originalName\":\"[query - 11].lastEvaluatedTimeUtc\",\"mergedName\":\"lastEvaluatedTimeUtc\",\"fromId\":\"3c97372c-6658-4cd6-a57d-f02004b430ab\"},{\"originalName\":\"[query - 11].suggestions\",\"mergedName\":\"suggestions\",\"fromId\":\"3c97372c-6658-4cd6-a57d-f02004b430ab\"},{\"originalName\":\"[query - 11].additionalProperties\",\"mergedName\":\"additionalProperties\",\"fromId\":\"3c97372c-6658-4cd6-a57d-f02004b430ab\"},{\"originalName\":\"[query - 11].recommendationTypeId\"},{\"originalName\":\"[query - 11].state\"},{\"originalName\":\"[query - 11].creationTimeUtc\"},{\"originalName\":\"[query - 11].lastModifiedTimeUtc\"},{\"originalName\":\"[query - 12].recommendationTypeId\"},{\"originalName\":\"[query - 12].state\"},{\"originalName\":\"[query - 11].resourceId\"}]}",
+              "size": 0,
+              "title": "Tables with Low Usage and Optimization Opportunities",
+              "showExportToExcel": true,
+              "queryType": 7,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "suggestions",
+                    "formatter": 7,
+                    "formatOptions": {
+                      "linkTarget": "CellDetails",
+                      "linkIsContextBlade": true
+                    }
+                  }
+                ]
+              }
+            },
+            "conditionalVisibility": {
+              "parameterName": "selectedTab1",
+              "comparison": "isEqualTo",
+              "value": "sentinel"
+            },
+            "showPin": false,
+            "name": "query - 13"
+          },
+          {
+            "type": 12,
+            "content": {
+              "version": "NotebookGroup/1.0",
+              "groupType": "editable",
+              "items": [
+                {
+                  "type": 1,
+                  "content": {
+                    "json": "**Scenarios and Examples**\r\n\r\nThis section provides practical examples, visual guides, and scenario-based walkthroughs to help you better understand and apply key concepts in Sentinel capacity planning and configuration. Explore detailed illustrations of topics such as Data Collection Rule filtering (vertical vs. horizontal), workspace design considerations, and cost optimization strategies. Use these examples as references to support decision-making and accelerate implementation in your environment.\r\n\r\n---"
+                  },
+                  "name": "text - 0"
+                },
+                {
+                  "type": 12,
+                  "content": {
+                    "version": "NotebookGroup/1.0",
+                    "groupType": "editable",
+                    "title": "Vertical vs Horizontal Filtering",
+                    "expandable": true,
+                    "items": [
+                      {
+                        "type": 1,
+                        "content": {
+                          "json": "## 🎯 Data Collection Rule (DCR) – Vertical vs Horizontal Filtering\r\n\r\nCollecting everything in the cloud is expensive and creates noise. Filtering helps you keep only what matters for security.\r\n\r\n---\r\n\r\n### Vertical Filtering (Columns)\r\n\r\nRemove columns you don’t need.\r\n\r\n**Examples of columns to skip:**\r\n\r\n* Latitude and Longitude (if you already have the city or country)\r\n* **RawEventData** or **Payload** fields that just repeat other details\r\n* User IDs without security value\r\n\r\n**Why do this?**\r\nReducing columns can shrink data size by up to 50% without losing important information.\r\n\r\n**How:**\r\nExclude unwanted columns:\r\n\r\n```\r\n| project-away RawEventData, Payload, Latitude, Longitude\r\n```\r\n\r\nOr include only the ones you want:\r\n\r\n```\r\n| project Name, IPAddress, Location, Application\r\n```\r\n\r\n<p align=\"center\">\r\n  <img src=\"https://raw.githubusercontent.com/RishiCPS/SentinelImages/refs/heads/main/VerticalvsHorizontalFiltering.png\" alt=\"Vertical vs Horizontal Filtering\">\r\n</p>\r\n\r\n<p align=\"center\">\r\n  <em>Illustration of Vertical (Column-Based) and Horizontal (Row-Based) Filtering in Data Collection Rules</em>\r\n</p>\r\n\r\n\r\n\r\n---\r\n\r\n### Horizontal Filtering (Rows)\r\n\r\nRemove rows that are safe to ignore.\r\n\r\n**Examples:**\r\n\r\n* **Trusted Internal IPs**\r\n  Exclude logs from known safe internal addresses (e.g., `192.168.1.1`) because they’re already secured and monitored.\r\n\r\n  > Avoid filtering out public IPs like `1.1.1.1` (Cloudflare DNS). Use only verified internal IPs you trust.\r\n\r\n* **AWSCloudTrail Logs – Non-Security Services**\r\n  AWSCloudTrail collects logs from many AWS services, but Sentinel mainly has detections for top services like EC2, KMS, S3, and DynamoDB. Logs from billing or finance services often add little security value. Filtering these can significantly reduce costs.\r\n\r\n* **AWSCloudTrail Logs – Tag Changes**\r\n  Some environments automatically add or update resource tags frequently. Each change can create a separate log entry. Excluding these repetitive tag activity logs can cut ingest volume by 60%.\r\n\r\n* **Firewall Denied Traffic**\r\n  Denied connections often occur due to known rules and don’t always need to be stored in hot storage. Instead of deleting them, you can redirect these logs to cheaper storage for later review if needed.\r\n\r\n---\r\n\r\n**Tip:**\r\nStart by removing columns (easier and low-risk), then look at rows (more sensitive). Always test filters carefully so you don’t lose important security data.\r\n"
+                        },
+                        "name": "Data Collection Rule - Vertical vs Horizontal Filtering"
+                      }
+                    ]
+                  },
+                  "name": "Vertical vs Horizontal Filtering"
+                },
+                {
+                  "type": 12,
+                  "content": {
+                    "version": "NotebookGroup/1.0",
+                    "groupType": "editable",
+                    "title": "Optimizing Log Ingestion",
+                    "expandable": true,
+                    "expanded": true,
+                    "items": [
+                      {
+                        "type": 1,
+                        "content": {
+                          "json": "# Optimizing Log Ingestion\r\n\r\nMicrosoft Sentinel offers powerful capabilities for collecting and analyzing security data. However, ingesting all logs without planning can lead to high costs and operational challenges. Optimizing log ingestion ensures you keep valuable data without overspending.\r\n\r\n---\r\n\r\n## Key Strategies\r\n\r\n✅ **Use Basic Logs for Low-Value Data**  \r\nStore less critical logs (such as certain firewall or DNS data) as Basic Logs, which cost less and can still be queried when needed.\r\n\r\n✅ **Archive for Compliance**  \r\nInstead of keeping all logs in hot storage, archive older data to meet compliance requirements without incurring high ingestion costs.\r\n\r\n✅ **Granular Retention Policies**  \r\nApply different retention settings per table. For example, keep security alert logs longer while using shorter retention for less important data.\r\n\r\n✅ **Use Filtering and Transformation**  \r\nFilter out noise and irrelevant fields before ingestion. This reduces volume and focuses storage on security-relevant events.\r\n\r\n✅ **Access Tiers for Cost Control**  \r\nLeverage access tiers to balance performance and cost, such as storing infrequently accessed logs in cold storage.\r\n\r\n---\r\n\r\n<p align=\"center\">\r\n  <img src=\"https://raw.githubusercontent.com/RishiCPS/SentinelImages/refs/heads/main/OptimiseLogIngestion.png\" alt=\"Vertical vs Horizontal Filtering\">\r\n</p>\r\n\r\n*Example: Combining filtering, basic logs, and retention policies to reduce costs*\r\n\r\n---\r\n\r\nBy carefully planning which data to collect, where to store it, and how long to retain it, you can maintain strong security monitoring while keeping costs predictable and manageable.\r\n"
+                        },
+                        "name": "text - 0"
+                      }
+                    ]
+                  },
+                  "name": "group - 2"
+                }
+              ]
+            },
+            "conditionalVisibility": {
+              "parameterName": "selectedTab1",
+              "comparison": "isEqualTo",
+              "value": "ScenariosExamples"
+            },
+            "name": "ScenariosExamples"
+          },
+          {
+            "type": 12,
+            "content": {
+              "version": "NotebookGroup/1.0",
+              "groupType": "editable",
+              "title": "Sentinel Data Lake",
+              "expandable": true,
+              "expanded": true,
+              "items": [
+                {
+                  "type": 1,
+                  "content": {
+                    "json": "### 🧠 Sentinel Data Lake – Technical Implementation Guide\r\n\r\n> Sentinel Data Lake represents a significant architectural enhancement in Microsoft's Unified SecOps ecosystem, enabling long-term, low-cost storage without compromising future log usability. This guide covers when and how to leverage it, with a strong focus on technical deployment and operationalization.\r\n\r\n---\r\n\r\n### 🎯 Deployment Triggers: When Data Lake Becomes Relevant\r\n\r\nUse Sentinel Data Lake when:\r\n\r\n* Log types require **retention beyond Analytics tier limits** (90 days default)\r\n* Security use cases involve **hunting, correlation, or replay** over a multi-month/year timeline\r\n* You need **cost-efficient storage** for logs not driving detections but still valuable for:\r\n\r\n  * **Scheduled analytics**\r\n  * **AI/ML datasets**\r\n  * **Regulatory audit traceability**\r\n\r\nIt is **not designed for real-time analytics** or frequent querying by analysts. Instead, it acts as a forensic, long-term, low-cost mirror.\r\n\r\n> ⚠️ If you change a table’s tier from Analytics to Lake-only, analytics rules, hunting queries, and dashboards will no longer function for that data. You will also lose any discounts tied to that table.\r\n\r\n> ⚠️ XDR tables with Tier: XDR default cannot be moved to Data Lake. You must first ingest them into Sentinel to manage their retention beyond the default 30 days.\r\n\r\n---\r\n\r\n### 🧪 Technical Characteristics\r\n\r\n| Attribute                | Description                                  |\r\n| ------------------------ | -------------------------------------------- |\r\n| **Retention**            | Up to 12 years                               |\r\n| **Storage Architecture** | Blob-based cold storage (decoupled from LA)  |\r\n| **Ingestion Mechanism**  | Automatic mirroring from Analytics tier      |\r\n| **Data Format**          | KQL-parsable, LA schema-compliant            |\r\n| **Billing Model**        | Based on storage and query usage             |\r\n| **Query Engine**         | Search Jobs, Lake Explorer, Scheduled Search |\r\n| **Platform Support**     | Defender portal only (Unified SecOps)        |\r\n| **Export Options**       | Fabric, ADX, CSV/JSON, Custom Tables         |\r\n\r\n---\r\n\r\n### ⚙️ Table Management and Retention Controls\r\n\r\n* **Default Mode**: Analytics + Data Lake (dual ingestion)\r\n* **Lake-Only Mode**: Route logs directly to Data Lake; skips hot storage\r\n* **No Backfill**: Data Lake begins mirroring **post-enablement only**\r\n* **Retention Settings**:\r\n\r\n  * **Analytics Tier**: Hot retention + long-term retention (Lake)\r\n  * **Data Lake Tier**: Single long-term retention setting\r\n\r\n> 🕐 Time to First Data: \\~90–120 min after enabling. New connectors take \\~30 min to appear.\r\n\r\n---\r\n\r\n### 💰 Billing Overview (Explained)\r\n\r\nSentinel Data Lake introduces a distinct billing model that separates ingestion, storage, and compute costs:\r\n\r\n| Meter Type              | When It Applies                 | Details                                                                         |\r\n| ----------------------- | ------------------------------- | ------------------------------------------------------------------------------- |\r\n| **Data Lake Ingestion** | As data enters Lake             | Charged per GB. Applies to both mirrored and Lake-only data.                    |\r\n| **Data Lake Storage**   | Once data ages out of Analytics | Billed monthly per GB. No charges while data exists in Analytics.               |\r\n| **Data Lake Query**     | Each time lake data is queried  | Charged per GB scanned (not returned). Use filters to minimize cost.            |\r\n| **Notebook Compute**    | When running Lake notebooks     | Billed per core-hour, even for scheduled jobs. Session ends after 20 mins idle. |\r\n\r\n#### Examples:\r\n\r\n* **Mirrored data retained in Analytics = \\$0 Lake storage cost**\r\n* **Analytics (2 yrs) + Lake (4 yrs) = 2 yrs charge after data ages out of hot tier**\r\n* **Lake-only data (6 months) = billed from day one for storage**\r\n\r\n---\r\n\r\n### 🔄 Why Auxiliary Tier Still Matters\r\n\r\nThe **Auxiliary tier** remains key for:\r\n\r\n* Low-frequency queries (lookups, enrichment)\r\n* Short-term contextual logs (\\~30 days)\r\n* Logs not valuable for detection but needed in workbooks\r\n* Hosting config drift, asset inventory, or posture logs\r\n\r\n> Auxiliary is ideal when logs are too important to drop, but too noisy for Analytics and too short-lived for Data Lake.\r\n\r\n---\r\n\r\n### 🧠 Analytics vs Data Lake vs Auxiliary Tier\r\n\r\n| Feature/Use Case        | Analytics | Auxiliary | Data Lake |\r\n| ----------------------- | --------- | --------- | --------- |\r\n| Real-time detection     | ✅         | ❌         | ❌         |\r\n| Workbooks, hunting      | ✅         | ✅         | ❌         |\r\n| Lookup/enrichment       | ✅         | ✅         | ❌         |\r\n| Compliance retention    | ❌         | ❌         | ✅         |\r\n| Cold threat hunts       | ❌         | ❌         | ✅         |\r\n| Scheduled summarization | ❌         | ❌         | ✅         |\r\n\r\n---\r\n\r\n### 🔍 Lake-Only Ingestion\r\n\r\n* Direct-to-Lake mode skips Analytics tier completely\r\n* Useful for high-volume, low-priority logs\r\n* Enables compliance, forensic storage without real-time impact\r\n\r\n> ⚠️ Logs in Lake-only mode are **not available** for Sentinel detections or workbooks.\r\n\r\n---\r\n\r\n### 📊 What to Log? Data Lake Suitability Matrix\r\n\r\nThis matrix helps prioritize log source placement across tiers:\r\n\r\n\r\n![Sentinel Data Lake](https://github.com/RishiCPS/SentinelImages/blob/main/SentinelDataLake.png?raw=true)\r\n\r\n\r\n> Consider moving logs with high forensic value but low detection frequency into Data Lake to reduce Analytics-tier noise.\r\n\r\n---\r\n\r\n\r\n### 📌 Final Thoughts\r\n\r\nSentinel Data Lake introduces scalable, cost-effective retention and querying that complements—not replaces—existing tiers.\r\n\r\nBy understanding ingestion types, table tiering rules, and billing implications, teams can architect a **tiered data strategy** aligned to detection, cost, and compliance goals.\r\n\r\n> Up next: Querying Sentinel Data Lake effectively with Search Jobs and Scheduled Search best practices.\r\n"
+                  },
+                  "name": "text - 0"
+                }
+              ]
+            },
+            "conditionalVisibility": {
+              "parameterName": "selectedTab1",
+              "comparison": "isEqualTo",
+              "value": "ScenariosExamples"
+            },
+            "name": "group - 15"
+          }
+        ]
+      },
+      "name": "group - cost",
+      "styleSettings": {
+        "showBorder": true
+      }
+    }
+  ],
+  "fallbackResourceIds": [
+    "/subscriptions/b4a10294-e9a4-47e3-8dab-94cc23dd16d7/resourcegroups/sentinel-prod-rg/providers/microsoft.operationalinsights/workspaces/bdosecure-law"
+  ],
+  "fromTemplateId": "sentinel-UserWorkbook",
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
